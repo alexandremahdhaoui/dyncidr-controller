@@ -1,3 +1,10 @@
 # dyncidr-controller
 
-This project can be created in a less complex way with crossplane.
+Simpler to achieve with crossplane.
+
+## Goal
+
+In the context where IPV6 subnets are dynamically allocated and changed every X hours, 
+we want to keep our public loadbalancer available. Hence we need to update the IPs as
+soon as they changed.
+

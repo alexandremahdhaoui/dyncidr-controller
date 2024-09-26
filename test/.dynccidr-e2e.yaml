@@ -1,0 +1,44 @@
+apiVersion: alexandre.mahdhaoui.com/v1alpha1
+kind: DynamicNetwork
+spec:
+  fetchNetwork:
+    # type must be explicitely specifed for forward compatibility.
+    # e.g. "kubernetes" could be an alternative lookup type.
+    type: webhook
+    # Webhook lookup. 
+    webhook:
+      url: https://api6.ipify.org?format=json
+    # postTransform mutates the lookup results 
+    # into a parseable IP CIDR.
+    # If the results is already a valid CIDR,
+    # postTransform can be left empty.
+    postTransformations:
+      - type: jsonpath
+        jsonpath: '{.ip}'
+      - type: format
+        format: "%s/64"
+  allocateSubnets: # no support for ip pools of n amount of ips. 
+    # we want to change that behavior. 
+    # First we slice the obtained CIDR. E.g. /56 into 1024 slices.
+    # Then we allocate slices of these IPs.
+    - name: publicIPV6KubeAPIServer
+      netmask: /128 # parseable
+  # -- createResources
+  # The approach must be declarative, hence instead of mutating
+  # existing resources, this controller will create resources
+  # based on a template.
+  createResources:
+    - name: publicIPV6KubeAPIServer
+      template: |
+        apiVersion: cilium.io/v2alpha1
+        kind: CiliumLoadBalancerIPPool
+        metadata:
+          name: v6-public-kube-apiserver
+          labels:
+            bgp-advertise: bgp-0
+        spec:
+          blocks:
+            - cidr: {{ publicIPV6KubeAPIServer }}
+          serviceSelector:
+            matchLabels:
+              lb-type: v6-public-kube-apiserver

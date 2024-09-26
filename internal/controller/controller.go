@@ -13,7 +13,7 @@ type Reconciler struct {
 	SubnetAllocator adapter.SubnetAllocator
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dn *v1alpha1.DynamicNetwork) {
+func (r *Reconciler) Reconcile(ctx context.Context, dn *v1alpha1.DynamicNetwork) (nil, error) {
 	ipNet, err := r.NetworkFetcher.Fetch(ctx, dn)
 	if err != nil {
 		return nil, err
@@ -24,5 +24,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dn *v1alpha1.DynamicNetwork)
 		return nil, err
 	}
 
-	r.ResourceMutator.Mutate(ctx, dn, allocatedSubnets)
+	if err := r.ResourceMutator.Mutate(ctx, dn, allocatedSubnets); err != nil {
+		return nil, err
+	}
 }
